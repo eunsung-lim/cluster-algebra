@@ -523,12 +523,13 @@ class Quiver:
         df = pd.DataFrame(mtx, index=row_names, columns=col_names)
         return df
 
-def mutation_matrix(df: pd.DataFrame, k):
+def matrix_mutation(df: pd.DataFrame, k):
     k -= 1
     b = df.to_numpy()
     nb = np.zeros_like(b)
+    m = len(b)
     n = len(b[0])
-    for i in range(n+1):
+    for i in range(m):
         for j in range(n):
             if i == k or j == k:
                 nb[i][j] = -b[i][j]
