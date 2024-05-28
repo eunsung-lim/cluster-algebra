@@ -424,11 +424,7 @@ class Quiver:
             path_v = [v1]
             path_e = [lamination.edge1]
 
-            cnt = 0
             while True:
-                cnt+=1
-                if cnt >= 5:
-                    break
                 next_clusters = [c for c in clusters if c.vertex1 == v2 or c.vertex2 == v2]
                 nv1 = v2
                 nv2 = None
@@ -462,10 +458,10 @@ class Quiver:
                 path_e[i].shear += sign
                 sign *= -1
 
-            # print(path_v)
-            # print(path_e)
-            # for c in self.clusters:
-            #     print(c, c.shear)
+            print(path_v)
+            print(path_e)
+            for c in self.clusters:
+                print(c, c.shear)
 
     def find_triangles(self):
         triangles = []
@@ -526,3 +522,20 @@ class Quiver:
         col_names = [c.name for c in self.clusters]
         df = pd.DataFrame(mtx, index=row_names, columns=col_names)
         return df
+
+def mutation_matrix(df: pd.DataFrame, k):
+    k -= 1
+    b = df.to_numpy()
+    nb = np.zeros_like(b)
+    n = len(b[0])
+    for i in range(n+1):
+        for j in range(n):
+            if i == k or j == k:
+                nb[i][j] = -b[i][j]
+            elif b[i][k] > 0 and b[k][j] > 0:
+                nb[i][j] = b[i][j] + b[i][k] * b[k][j]
+            elif b[i][k] < 0 and b[k][j] < 0:
+                nb[i][j] = b[i][j] - b[i][k] * b[k][j]
+            else:
+                nb[i][j] = b[i][j]
+    return pd.DataFrame(nb, index=df.index, columns=df.columns)
