@@ -458,10 +458,10 @@ class Quiver:
                 path_e[i].shear += sign
                 sign *= -1
 
-            print(path_v)
-            print(path_e)
-            for c in self.clusters:
-                print(c, c.shear)
+            # print(path_v)
+            # print(path_e)
+            # for c in self.clusters:
+            #     print(c, c.shear)
 
     def find_triangles(self):
         triangles = []
