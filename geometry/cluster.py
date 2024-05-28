@@ -251,43 +251,6 @@ def exchange_matrix():
     pass
 
 
-def visualize_graph(
-        vertices: List[Vertex],
-        frozens: List[FrozenVariable],
-        clusters: List[ClusterVariable],
-        laminations: LaminationList,
-        show_vertex_labels=True,
-        show_frozen_labels=True,
-        show_cluster_labels=True,
-):
-    G = nx.Graph()
-
-    pos = {i: vertex.to_tuple() for i, vertex in enumerate(vertices)}
-    vertex_labels = {i: vertex.name for i, vertex in enumerate(vertices)} if show_vertex_labels else {}
-    G.add_nodes_from(pos.keys())
-
-    frozen_list = [(vertices.index(f.vertex1), vertices.index(f.vertex2)) for f in frozens]
-    frozen_labels = {frozen_list[i]: f.name for i, f in enumerate(frozens)} if show_frozen_labels else {}
-    G.add_edges_from(frozen_list)
-
-    cluster_list = [(vertices.index(c.vertex1), vertices.index(c.vertex2)) for c in clusters]
-    cluster_labels = {cluster_list[i]: c.name for i, c in enumerate(clusters)} if show_cluster_labels else {}
-    G.add_edges_from(cluster_list)
-
-    nx.draw(G, pos, labels=vertex_labels, with_labels=show_vertex_labels, node_color='lightblue', node_size=500, font_size=10)
-    if show_frozen_labels:
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=frozen_labels)
-    if show_cluster_labels:
-        bbox = dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='yellow', alpha=1)
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=cluster_labels, font_color='red', bbox=bbox)
-
-    # G_directed = nx.DiGraph()
-    # triangles = [clique for clique in nx.enumerate_all_cliques(G) if len(clique) == 3]
-
-    if laminations:
-        laminations.visualize()
-
-
 class Shear(Vertex):
     def __init__(self, x, y,
                  cluster: ClusterVariable,
@@ -298,6 +261,10 @@ class Shear(Vertex):
         self.cluster = cluster
         self.lamination = lamination
         self.value = value
+
+    def plot(self):
+        plt.plot(self.x, self.y, 'bo' if self.value > 0 else 'ro')
+        pass
 
     pass
 
@@ -377,6 +344,7 @@ class Quiver:
 
     def reset_shear(self):
         self.shears = []
+        self.find_shear()
 
     def flip(self, cluster_index):
         c = get_cluster_by_index(cluster_index)
@@ -394,17 +362,51 @@ class Quiver:
         self.reset_arrows()
         pass
 
-    def plot(self, **kwargs):
-        visualize_graph(
-            self.vertices,
-            self.frozens,
-            self.clusters,
-            self.laminations,
-            **kwargs
-        )
-        self.reset_arrows()
-        for arrow in self.arrows:
-            arrow.plot()
+    def plot(self,
+        show_vertex_labels=True,
+        show_frozen_labels=True,
+        show_cluster_labels=True,
+        show_arrows=True,
+        show_shears=True,
+    ):
+
+        G = nx.Graph()
+
+        pos = {i: vertex.to_tuple() for i, vertex in enumerate(self.vertices)}
+        vertex_labels = {i: vertex.name for i, vertex in enumerate(self.vertices)} if show_vertex_labels else {}
+        G.add_nodes_from(pos.keys())
+
+        frozen_list = [(self.vertices.index(f.vertex1), self.vertices.index(f.vertex2)) for f in self.frozens]
+        frozen_labels = {frozen_list[i]: f.name for i, f in enumerate(self.frozens)} if show_frozen_labels else {}
+        G.add_edges_from(frozen_list)
+
+        cluster_list = [(self.vertices.index(c.vertex1), self.vertices.index(c.vertex2)) for c in self.clusters]
+        cluster_labels = {cluster_list[i]: c.name for i, c in enumerate(self.clusters)} if show_cluster_labels else {}
+        G.add_edges_from(cluster_list)
+
+        nx.draw(G, pos, labels=vertex_labels, with_labels=show_vertex_labels, node_color='lightblue', node_size=500,
+                font_size=10)
+
+        if show_frozen_labels:
+            nx.draw_networkx_edge_labels(G, pos, edge_labels=frozen_labels)
+
+        if show_cluster_labels:
+            bbox = dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='yellow', alpha=1)
+            nx.draw_networkx_edge_labels(G, pos, edge_labels=cluster_labels, font_color='red', bbox=bbox)
+
+        if self.laminations:
+            self.laminations.visualize()
+
+        if show_arrows:
+            self.reset_arrows()
+            for arrow in self.arrows:
+                arrow.plot()
+
+        if show_shears:
+            self.reset_shear()
+            for shear in self.shears:
+                shear.plot()
+
         plt.show()
 
     def find_shear(self):
@@ -453,9 +455,19 @@ class Quiver:
             if len(path_v) == 2:
                 continue
 
+            # clockwise or counterclockwise
             sign = 1 if (path_v[0].index + 1 - path_v[1].index) % len(self.vertices) == 0 else -1
             for i in range(1, len(path_e) - 1):
                 path_e[i].shear += sign
+                intersection = path_e[i].line.intersection(lamination.line)
+                self.shears.append(Shear(
+                    intersection.x,
+                    intersection.y,
+                    path_e[i],
+                    lamination,
+                    sign
+                ))
+
                 sign *= -1
 
             # print(path_v)
