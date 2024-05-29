@@ -552,3 +552,27 @@ def matrix_mutation(df: pd.DataFrame, k):
             else:
                 nb[i][j] = b[i][j]
     return pd.DataFrame(nb, index=df.index, columns=df.columns)
+
+
+class Puncture(Vertex):
+    def __init__(self, x, y, name=None):
+        super().__init__(x, y, name)
+        self.index = Puncture.index
+        Puncture.index += 1
+
+    def __repr__(self):
+        return f"{self.name}"
+
+    pass
+
+Puncture.index = 1
+
+
+def initialize():
+    # 초기화
+    Vertex.reset_index()
+    Vertex.reset_instances()
+    Edge.reset_index()
+    Edge.reset_instances()
+    ClusterVariable.reset_index()
+    ClusterVariable.reset_instances()
