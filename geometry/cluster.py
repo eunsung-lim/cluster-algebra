@@ -351,6 +351,7 @@ class Quiver:
         self.arrows = []
         self.set_arrows()
         self.relations = []
+        self.expressions = []
 
     def reset_shear(self):
         self.shears = []
@@ -358,6 +359,9 @@ class Quiver:
 
     def reset_relations(self):
         self.relations = []
+
+    def reset_expressions(self):
+        self.expressions = []
 
     def flip(self, cluster_index):
         cluster = get_cluster_by_index(cluster_index)
@@ -421,6 +425,7 @@ class Quiver:
         gamma_prime = cluster.variable
 
         self.relations.append(sp.Eq(gamma_prime * gamma, term1 + term2))
+        self.expressions.append(sp.Eq(gamma_prime, (term1 + term2) / gamma))
 
         self.reset_shear()
         self.find_shear()
