@@ -381,10 +381,19 @@ class Quiver:
         term1 = 1
         term2 = 1
         for row_name in row_names:
-            term1 *= sp.symbols(row_name) if row_name != 'Shear' else sp.symbols('y')
+            if row_name == 'Shear':
+                term1 *= sp.symbols('y')
+                continue
+            else:
+                variable = str(get_cluster_by_index(int(row_name[2:].rstrip("'"))).variable)
+                term1 *= sp.symbols(variable)
         for row_name in row_names_minus:
-            term2 *= sp.symbols(row_name) if row_name != 'Shear' else sp.symbols('y')
-
+            if row_name == 'Shear':
+                term2 *= sp.symbols('y')
+                continue
+            else:
+                variable = str(get_cluster_by_index(int(row_name[2:].rstrip("'"))).variable)
+                term2 *= sp.symbols(variable)
         # ea = get_edge_by_vertices(v1, v3)
         # eb = get_edge_by_vertices(v2, v3)
         # ec = get_edge_by_vertices(v1, v4)
@@ -407,7 +416,7 @@ class Quiver:
 
         gamma = cluster.variable
         cluster.set_vertices(v3, v4)
-        cluster.set_variable(f"{cluster.name}'")
+        cluster.set_variable(f"{cluster.variable}'")
 
         gamma_prime = cluster.variable
 
@@ -437,7 +446,7 @@ class Quiver:
         G.add_edges_from(frozen_list)
 
         cluster_list = [(self.vertices.index(c.vertex1), self.vertices.index(c.vertex2)) for c in self.clusters]
-        cluster_labels = {cluster_list[i]: c.name for i, c in enumerate(self.clusters)} if show_cluster_labels else {}
+        cluster_labels = {cluster_list[i]: str(c.variable) for i, c in enumerate(self.clusters)} if show_cluster_labels else {}
         G.add_edges_from(cluster_list)
 
         nx.draw(G, pos, labels=vertex_labels, with_labels=show_vertex_labels, node_color='lightblue', node_size=50,
