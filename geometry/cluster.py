@@ -13,6 +13,7 @@ from scipy.spatial import Delaunay
 import matplotlib.tri as tri
 from numpy import cos, sin, pi
 
+import sympy as sp
 
 
 
@@ -130,13 +131,19 @@ class ClusterVariable(Edge):
     def __init__(self, vertex1, vertex2, name=None):
         super().__init__(vertex1, vertex2, name)
 
+        self.variable = None
         self.shear = 0
 
         self.cluster_index = ClusterVariable.index
-        self.name = name if name else f"c{ClusterVariable.index}"
+        self.name = name if name else f"x_{ClusterVariable.index}"
         ClusterVariable.index += 1
 
         ClusterVariable.instances.append(self)
+
+    def set_variable(self, variable):
+        self.variable = sp.symbols(variable)
+
+
 
     def reset_shear(self):
         self.shear = 0
@@ -335,28 +342,77 @@ class Quiver:
         self.vertices = vertices
         self.frozens = frozens
         self.clusters = clusters
+        for c in self.clusters:
+            c.set_variable(f"x_{c.cluster_index}")
         self.laminations = laminations
         self.laminations.set_vertex_positions()
         self.shears = []
         self.find_shear()
         self.arrows = []
         self.set_arrows()
+        self.relations = []
 
     def reset_shear(self):
         self.shears = []
         self.find_shear()
 
+    def reset_relations(self):
+        self.relations = []
+
     def flip(self, cluster_index):
-        c = get_cluster_by_index(cluster_index)
-        v1, v2 = c.vertex1, c.vertex2
-        v3 = []
+        cluster = get_cluster_by_index(cluster_index)
+        v1, v2 = cluster.vertex1, cluster.vertex2
+        v34 = []
         for v in Vertex.instances:
             if is_connected(v1.index, v.index) and is_connected(v2.index, v.index):
-                v3.append(v)
-        if len(v3) != 2:
+                v34.append(v)
+        if len(v34) != 2:
             raise ValueError("There are more than two vertices connected to both v1 and v2.")
-        v3, v4 = v3
-        c.set_vertices(v3, v4)
+        v3, v4 = v34
+
+        b = self.get_exchange_matrix()
+        # get b's column corresponding to cluster
+        b = b.iloc[:, cluster_index - 1]
+        # get row names of b whose value is 1
+        row_names = b[b == 1].index
+        # get row names of b whose value is -1
+        row_names_minus = b[b == -1].index
+
+        term1 = 1
+        term2 = 1
+        for row_name in row_names:
+            term1 *= sp.symbols(row_name) if row_name != 'Shear' else sp.symbols('y')
+        for row_name in row_names_minus:
+            term2 *= sp.symbols(row_name) if row_name != 'Shear' else sp.symbols('y')
+
+        # ea = get_edge_by_vertices(v1, v3)
+        # eb = get_edge_by_vertices(v2, v3)
+        # ec = get_edge_by_vertices(v1, v4)
+        # ed = get_edge_by_vertices(v2, v4)
+        #
+        # a = ea.variable if isinstance(ea, ClusterVariable) else 1
+        # b = eb.variable if isinstance(eb, ClusterVariable) else 1
+        # c = ec.variable if isinstance(ec, ClusterVariable) else 1
+        # d = ed.variable if isinstance(ed, ClusterVariable) else 1
+        #
+        # print(cluster.name)
+        # if isinstance(ea, ClusterVariable) and self.get_exchange_matrix().at['Shear', cluster.name] != 0:
+        #     a *= sp.symbols('y')
+        # if isinstance(eb, ClusterVariable) and self.get_exchange_matrix().at['Shear', cluster.name] != 0:
+        #     b *= sp.symbols('y')
+        # if isinstance(ec, ClusterVariable) and self.get_exchange_matrix().at['Shear', cluster.name] != 0:
+        #     c *= sp.symbols('y')
+        # if isinstance(ed, ClusterVariable) and self.get_exchange_matrix().at['Shear', cluster.name] != 0:
+        #     d *= sp.symbols('y')
+
+        gamma = cluster.variable
+        cluster.set_vertices(v3, v4)
+        cluster.set_variable(f"{cluster.name}'")
+
+        gamma_prime = cluster.variable
+
+        self.relations.append(sp.Eq(gamma_prime * gamma, term1 + term2))
+
         self.reset_shear()
         self.find_shear()
         self.reset_arrows()
@@ -384,7 +440,7 @@ class Quiver:
         cluster_labels = {cluster_list[i]: c.name for i, c in enumerate(self.clusters)} if show_cluster_labels else {}
         G.add_edges_from(cluster_list)
 
-        nx.draw(G, pos, labels=vertex_labels, with_labels=show_vertex_labels, node_color='lightblue', node_size=500,
+        nx.draw(G, pos, labels=vertex_labels, with_labels=show_vertex_labels, node_color='lightblue', node_size=50,
                 font_size=10)
 
         if show_frozen_labels:
