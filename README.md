@@ -1,4 +1,4 @@
-# cluster-algebra visualization tool
+# cluster algebra visualization tool
 
 This library provides a visualization tool for cluster algebras. 
 Especially it is useful for visualizing quivers and cluster variables.
