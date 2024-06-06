@@ -8,8 +8,10 @@ Especially it is useful for visualizing quivers and cluster variables.
 - python 3.8
 - networkx
 - matplotlib
-- numpy
 - scipy
+- numpy
+- pandas
+- sympy
 
 ## Installation
 

@@ -16,7 +16,6 @@ from numpy import cos, sin, pi
 import sympy as sp
 
 
-
 class Vertex:
     instances = []
 
@@ -142,8 +141,6 @@ class ClusterVariable(Edge):
 
     def set_variable(self, variable):
         self.variable = sp.symbols(variable)
-
-
 
     def reset_shear(self):
         self.shear = 0
@@ -304,7 +301,9 @@ class Arrow:
         arrow = FancyArrowPatch(start, end, arrowstyle='-|>', color='red', shrinkA=10, shrinkB=10, mutation_scale=20)
         # plt.arrow(x1, y1, x2 - x1, y2 - y1, head_width=0.1, head_length=0.1,)
         ax.add_patch(arrow)
+
     pass
+
 
 Arrow.index = 1
 
@@ -433,12 +432,12 @@ class Quiver:
         pass
 
     def plot(self,
-        show_vertex_labels=True,
-        show_frozen_labels=True,
-        show_cluster_labels=True,
-        show_arrows=True,
-        show_shears=True,
-    ):
+             show_vertex_labels=True,
+             show_frozen_labels=True,
+             show_cluster_labels=True,
+             show_arrows=True,
+             show_shears=True,
+             ):
 
         G = nx.Graph()
 
@@ -451,7 +450,8 @@ class Quiver:
         G.add_edges_from(frozen_list)
 
         cluster_list = [(self.vertices.index(c.vertex1), self.vertices.index(c.vertex2)) for c in self.clusters]
-        cluster_labels = {cluster_list[i]: str(c.variable) for i, c in enumerate(self.clusters)} if show_cluster_labels else {}
+        cluster_labels = {cluster_list[i]: str(c.variable) for i, c in
+                          enumerate(self.clusters)} if show_cluster_labels else {}
         G.add_edges_from(cluster_list)
 
         nx.draw(G, pos, labels=vertex_labels, with_labels=show_vertex_labels, node_color='lightblue', node_size=50,
@@ -584,6 +584,7 @@ class Quiver:
                     )
                 )
         self.arrows = arrows
+
     pass
 
     def reset_arrows(self):
@@ -593,17 +594,18 @@ class Quiver:
 
     def get_exchange_matrix(self):
         n = len(self.clusters)
-        mtx = [[0 for _ in range(n)] for _ in range(n+1)]
+        mtx = [[0 for _ in range(n)] for _ in range(n + 1)]
         for arrow in self.arrows:
-            mtx[arrow.cluster1.cluster_index-1][arrow.cluster2.cluster_index-1] = 1
-            mtx[arrow.cluster2.cluster_index-1][arrow.cluster1.cluster_index-1] = -1
+            mtx[arrow.cluster1.cluster_index - 1][arrow.cluster2.cluster_index - 1] = 1
+            mtx[arrow.cluster2.cluster_index - 1][arrow.cluster1.cluster_index - 1] = -1
         for cluster in self.clusters:
-            mtx[n][cluster.cluster_index-1] = cluster.shear
+            mtx[n][cluster.cluster_index - 1] = cluster.shear
 
         row_names = [c.name for c in self.clusters] + ['Shear']
         col_names = [c.name for c in self.clusters]
         df = pd.DataFrame(mtx, index=row_names, columns=col_names)
         return df
+
 
 def matrix_mutation(df: pd.DataFrame, k):
     k -= 1
@@ -634,6 +636,7 @@ class Puncture(Vertex):
         return f"{self.name}"
 
     pass
+
 
 Puncture.index = 1
 
