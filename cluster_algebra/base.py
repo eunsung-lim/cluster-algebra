@@ -1289,15 +1289,22 @@ class PerfectMatching(SnakeDiagram):
         plt.savefig(filename)
 
     def expr(self, latex=False):
+        y = sp.symbols('y')
+
         sub_expr = sp.Integer(1)
         for cbox in self.colored_boxes:
             sub_expr = sub_expr * cbox.expr()
         poly = self.quiver.express(self.target)[-1].rhs.as_numer_denom()[0]
         formula = None
-        for term in poly.as_ordered_terms():
-            if term.has(sub_expr) and not any(var in (term / sub_expr).free_symbols for var in sub_expr.free_symbols):
-                formula = term
-                break
+        if sub_expr == 1:
+            for term in poly.as_ordered_terms():
+                if term.subs(y, 1).is_number:
+                    formula = term
+        else:
+            for term in poly.as_ordered_terms():
+                if term.has(sub_expr) and not any(var in (term / sub_expr).free_symbols for var in sub_expr.free_symbols):
+                    formula = term
+                    break
         if latex:
             return "$" + sp.latex(formula) + "$"
         return formula
